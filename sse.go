@@ -74,7 +74,7 @@ func handleSse(c *fiber.Ctx) error {
 		log.Println("set body writer")
 		for msg := range messageChan {
 			log.Println("send message", msg)
-			fmt.Fprintf(w, "data: Message: %s\n\n", msg)
+			fmt.Fprintf(w, "data: %s\n\n", msg)
 			err := w.Flush()
 			if err != nil {
 				// Refreshing page in web browser will establish a new

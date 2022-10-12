@@ -8,6 +8,7 @@ import (
 	"os/signal"
 	"strconv"
 	"syscall"
+	"time"
 
 	cli "github.com/urfave/cli/v2"
 )
@@ -26,11 +27,9 @@ var (
 
 func runCopy(ctx context.Context, src, dest string) error {
 	cmd := NewCommand(func(line string) {
-		log.Println(line)
-		broker.Messages <- line
+		broker.Messages <- fmt.Sprintf("%s %s", time.Now().Format("2006-01-02T15:04:05.000"), line)
 	}, func(line string) {
-		log.Println(line)
-		broker.Messages <- line
+		broker.Messages <- fmt.Sprintf("%s %s", time.Now().Format("2006-01-02T15:04:05.000"), line)
 	})
 	args := []string{
 		"copy",
@@ -106,6 +105,12 @@ func main() {
 
 			app := setupHttpApp()
 
+			// go func() {
+			// 	for {
+			// 		broker.Messages <- "time is:" + time.Now().String()
+			// 		time.Sleep(time.Second)
+			// 	}
+			// }()
 			go broker.listen()
 
 			go func() {
