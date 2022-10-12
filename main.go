@@ -9,10 +9,11 @@ import (
 
 	"github.com/cristalhq/aconfig"
 	"github.com/cristalhq/aconfig/aconfigtoml"
+	cli "github.com/urfave/cli/v2"
+
 	"github.com/gofiber/fiber/v2"
 	"github.com/gofiber/fiber/v2/middleware/logger"
 	"github.com/gofiber/fiber/v2/middleware/recover"
-	cli "github.com/urfave/cli/v2"
 )
 
 type Config struct {
@@ -65,6 +66,7 @@ func main() {
 			},
 		},
 		Action: func(*cli.Context) error {
+			os.Setenv("PORT", fmt.Sprintf("%d", port))
 			// Create fiber app
 			app := fiber.New(fiber.Config{
 				Prefork: false, // go run app.go -prod
