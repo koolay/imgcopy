@@ -1,52 +1,83 @@
 package main
 
 import (
+	"context"
 	"fmt"
 	"log"
 	"os"
 	"os/signal"
+	"strconv"
 	"syscall"
 
-	"github.com/cristalhq/aconfig"
-	"github.com/cristalhq/aconfig/aconfigtoml"
 	cli "github.com/urfave/cli/v2"
-
-	"github.com/gofiber/fiber/v2"
-	"github.com/gofiber/fiber/v2/middleware/logger"
-	"github.com/gofiber/fiber/v2/middleware/recover"
 )
 
 type Config struct {
-	Port       int `default:"8080"`
-	HwRegistry struct {
-		User     string `default:"root" `
-		Password string `default:"dev"`
-	}
+	DockerAuthName   string
+	DockerAuthToken  string
+	DockerConfigFile string
 }
 
 var (
 	cfg     Config
 	verbose bool
-	port    int
+	port    int = 8080
 )
 
-func main() {
-	loader := aconfig.LoaderFor(&cfg, aconfig.Config{
-		SkipDefaults: false,
-		SkipFiles:    true,
-		SkipEnv:      true,
-		SkipFlags:    true,
-		EnvPrefix:    "IMGCOPY",
-		Files:        []string{"config.toml"},
-		FileDecoders: map[string]aconfig.FileDecoder{
-			".toml": aconfigtoml.New(),
-		},
+func runCopy(ctx context.Context, src, dest string) error {
+	cmd := NewCommand(func(line string) {
+		log.Println(line)
+		broker.Messages <- line
+	}, func(line string) {
+		log.Println(line)
+		broker.Messages <- line
 	})
+	args := []string{
+		"copy",
+		"--dest-authfile",
+		cfg.DockerConfigFile,
+		"--all",
+		"--src-tls-verify=false",
+		src,
+		dest,
+	}
+	fmt.Printf("command args: %v", args)
+	return cmd.Run(ctx, "skopeo", args, nil)
+}
 
-	if err := loader.Load(); err != nil {
-		log.Fatalf("failed to load config, error: %v", err)
+func loadConfig() {
+	cfg.DockerAuthName = os.Getenv("DOCKER_AUTH_NAME")
+	cfg.DockerAuthToken = os.Getenv("DOCKER_AUTH_TOKEN")
+	cfg.DockerConfigFile = os.Getenv("DOCKER_CONFIG_FILE")
+	if cfg.DockerConfigFile == "" {
+		cfg.DockerConfigFile = ".docker.json"
 	}
 
+	portEnv := os.Getenv("PORT")
+	if portEnv != "" {
+		var err error
+		port, err = strconv.Atoi(portEnv)
+		if err != nil {
+			log.Fatalf("invalid port: %v", portEnv)
+		}
+	}
+}
+
+func initDockerToken(tokenFile, authName, token string) error {
+	if err := os.WriteFile(tokenFile, []byte(`{
+	"auths": {
+		"`+authName+`": {
+			"auth": "`+token+`"
+		}
+	}
+}`), 0755); err != nil {
+		return fmt.Errorf("failed to write docker config file, file: %s, error: %w", cfg.DockerConfigFile, err)
+	}
+
+	return nil
+}
+
+func main() {
 	app := &cli.App{
 		Name:  "imgcopy",
 		Usage: "copy image to",
@@ -66,24 +97,19 @@ func main() {
 			},
 		},
 		Action: func(*cli.Context) error {
-			os.Setenv("PORT", fmt.Sprintf("%d", port))
-			// Create fiber app
-			app := fiber.New(fiber.Config{
-				Prefork: false, // go run app.go -prod
-			})
+			loadConfig()
+			if cfg.DockerAuthName != "" && cfg.DockerAuthToken != "" {
+				if err := initDockerToken(cfg.DockerConfigFile, cfg.DockerAuthName, cfg.DockerAuthToken); err != nil {
+					return err
+				}
+			}
 
-			// Middleware
-			app.Use(recover.New())
-			app.Use(logger.New())
-			app.Get("/", func(c *fiber.Ctx) error {
-				return c.SendString("Hello world!")
-			})
+			app := setupHttpApp()
 
-			// Create a /api/v1 endpoint
-			// v1 := app.Group("/api/v1")
+			go broker.listen()
 
-			log.Println("start to listen on", port)
 			go func() {
+				log.Println("start to listen on", port)
 				if err := app.Listen(fmt.Sprintf("0.0.0.0:%d", port)); err != nil {
 					panic(err)
 				}

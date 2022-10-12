@@ -1,0 +1,35 @@
+# Binaries for programs and plugins
+*.exe
+*.exe~
+*.dll
+*.so
+*.dylib
+
+# Output of the go coverage tool, specifically when used with LiteIDE
+*.out
+*.log
+*.log.*
+.env
+bin/
+debug
+*.old
+app.config
+*.scannerwork/
+.idea/
+.DS_Store
+*.pprof
+*.db
+dist/
+*.ini
+*.plz
+# Entries below this point are managed by Please (DO NOT EDIT)
+plz-out
+.vscode
+.plzconfig.local
+main
+dlv
+kubeconfig.yaml
+
+/e2e/config.yaml
+__debug_bin
+.docker.json
