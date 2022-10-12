@@ -15,3 +15,7 @@ $ docker run --rm  -e DOCKER_CONFIG_FILE=/tmp/docker.config.json -e DOCKER_AUTH_
 ```bash
 http://localhost:8080/api/copy?src=docker.io/library/busybox:latest&dest=my-registry.com/mirr/busybox:latest
 ```
+
+## Deployment
+
+https://railway.app/
