@@ -27,9 +27,9 @@ var (
 
 func runCopy(ctx context.Context, src, dest string) error {
 	cmd := NewCommand(func(line string) {
-		broker.Messages <- fmt.Sprintf("%s %s", time.Now().Format("2006-01-02T15:04:05.000"), line)
+		logEvent(fmt.Sprintf("%s %s", time.Now().Format("2006-01-02T15:04:05.000"), line))
 	}, func(line string) {
-		broker.Messages <- fmt.Sprintf("%s %s", time.Now().Format("2006-01-02T15:04:05.000"), line)
+		logEvent(fmt.Sprintf("%s %s", time.Now().Format("2006-01-02T15:04:05.000"), line))
 	})
 	args := []string{
 		"copy",

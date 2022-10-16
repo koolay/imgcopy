@@ -3,8 +3,13 @@
 
 <head>
   <title>Chat Example</title>
-  <link href="https://cdn.jsdelivr.net/npm/daisyui@2.31.0/dist/full.css" rel="stylesheet" type="text/css" />
-  <script src="https://cdn.tailwindcss.com"></script>
+  <!-- <link href="https://fastly.jsdelivr.net/npm/daisyui@2.31.0/dist/full.css" rel="stylesheet" type="text/css" /> -->
+  <!-- <link href="https://fastly.jsdelivr.net/npm/tailwindcss@2.2/dist/tailwind.min.css" rel="stylesheet" type="text/css" /> -->
+  <!-- <link href="https://fastly.jsdelivr.net/npm/tailwindcss@2.2/dist/tailwind.min.css" rel="stylesheet" type="text/css" /> -->
+
+  <link href="https://fastly.jsdelivr.net/npm/bulma@0.9.4/css/bulma.min.css" rel="stylesheet" type="text/css" />
+  <script src="https://fastly.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
+
   <script type="text/javascript">
     window.onload = function () {
       var source = new EventSource("/sse");
@@ -16,13 +21,42 @@
       };
       source.onmessage = function (stream) {
         console.log('recived stream', stream.data);
-        document.getElementById("log").innerHTML += '<pre data-prefix=""><code>' + stream.data + '</code></pre>';
+        document.getElementById("log").innerHTML += '<pre><code>' + stream.data + '</code></pre>';
       };
+    }
 
+    function copyImage() {
+      let src = document.getElementById("txtSrc").value;
+      let dest = document.getElementById("txtDest").value;
+      if (src == "" || dest == "") {
+        alert("Please enter a valid image tag");
+        return
+      }
+
+      document.getElementById("btnCopy").setAttribute("disabled", "");
+
+      axios.post('/api/copy', {
+        src: src.trim(),
+        dest: dest.trim(),
+      })
+        .then(function (response) {
+          console.log(response);
+          document.getElementById("btnCopy").removeAttribute("disabled");
+          if (response.status == 200) {
+            alert("Post successful! Please await it finished!");
+          }
+        })
+        .catch(function (error) {
+          console.log(error);
+        });
     }
 
   </script>
   <style type="text/css">
+    pre {
+      padding: 0;
+    }
+
     #log {
       margin-top: 20px;
       min-height: 200px;
@@ -33,15 +67,27 @@
 </head>
 
 <body>
-  <div class="w-screen h-screen bg-base-200">
-    <div class="h-20">
+  <div class="container mx-auto">
+    <div class="field">
+      <label class="label">Src</label>
+      <div class="control">
+        <input id="txtSrc" class="input" type="text" placeholder="docker.io/library/busybox:latest">
+      </div>
     </div>
-    <div class="mockup-code" id="log">
-      <!-- <pre data-prefix="$"><code>npm i daisyui</code></pre> -->
-      <!-- <pre data-prefix=">" class="text-warning"><code>installing...</code></pre> -->
-      <!-- <pre data-prefix=">" class="text-success"><code>Done!</code></pre> -->
+    <div class="field">
+      <label class="label">Dest</label>
+      <div class="control">
+        <input id="txtDest" class="input" type="text" placeholder="docker.io/library/busybox:latest">
+      </div>
     </div>
-  </div>
+
+    <div class="field is-grouped">
+      <div class="control">
+        <button id="btnCopy" class="button is-link" onclick="copyImage()">Submit</button>
+      </div>
+    </div>
+    <div id="log" class="has-background-light" style="width: 100%;margin-bottom: 50px;">
+    </div>
 </body>
 
 </html>

@@ -41,6 +41,12 @@ type Broker struct {
 	clients map[string]chan string
 }
 
+func logEvent(message string) {
+	if message != "" {
+		broker.Messages <- message
+	}
+}
+
 func (b *Broker) listen() {
 	for {
 		select {
