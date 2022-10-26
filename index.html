@@ -20,7 +20,6 @@
         console.log('An error has occurred while receiving stream', error);
       };
       source.onmessage = function (stream) {
-        console.log('recived stream', stream.data);
         document.getElementById("log").innerHTML += '<pre><code>' + stream.data + '</code></pre>';
       };
     }
@@ -28,6 +27,7 @@
     function copyImage() {
       let src = document.getElementById("txtSrc").value;
       let dest = document.getElementById("txtDest").value;
+      let loginKey = document.getElementById("txtLoginKey").value;
       if (src == "" || dest == "") {
         alert("Please enter a valid image tag");
         return
@@ -38,16 +38,19 @@
       axios.post('/api/copy', {
         src: src.trim(),
         dest: dest.trim(),
+        loginKey: loginKey.trim()
       })
         .then(function (response) {
-          console.log(response);
-          document.getElementById("btnCopy").removeAttribute("disabled");
           if (response.status == 200) {
             alert("Post successful! Please await it finished!");
+          } else {
+            alert("Post failed! Please await it finished!");
           }
         })
         .catch(function (error) {
-          console.log(error);
+          alert(`Post failed! ${error.message}`);
+        }).finally(function () {
+          document.getElementById("btnCopy").removeAttribute("disabled");
         });
     }
 
@@ -71,13 +74,20 @@
     <div class="field">
       <label class="label">Src</label>
       <div class="control">
-        <input id="txtSrc" class="input" type="text" placeholder="docker.io/library/busybox:latest">
+        <input id="txtSrc" class="input" type="text" placeholder="example: ghcr.io/metalbear-co/mirrord:3.3.0">
       </div>
     </div>
     <div class="field">
       <label class="label">Dest</label>
       <div class="control">
-        <input id="txtDest" class="input" type="text" placeholder="docker.io/library/busybox:latest">
+        <input id="txtDest" class="input" type="text"
+          placeholder="example: registry.cn-hangzhou.aliyuncs.com/gmirr/mirrord:3.3.0">
+      </div>
+    </div>
+    <div class="field">
+      <label class="label">LoginKey</label>
+      <div class="control">
+        <input id="txtLoginKey" class="input" type="password" placeholder="please input login key">
       </div>
     </div>
 

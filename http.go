@@ -12,7 +12,10 @@ import (
 	"github.com/gofiber/fiber/v2/middleware/recover"
 )
 
-var staticRoot = os.Getenv("STATIC_ROOT")
+var (
+	staticRoot = os.Getenv("STATIC_ROOT")
+	loginKey   = os.Getenv("LOGIN_KEY")
+)
 
 func setupHttpApp() *fiber.App {
 	// Create fiber app
@@ -33,16 +36,23 @@ func setupHttpApp() *fiber.App {
 		if err := c.BodyParser(&postData); err != nil {
 			return fmt.Errorf("invalid json body: %v", err)
 		}
+		inputKey := postData["loginKey"]
+		if inputKey != loginKey {
+			return sendFailure(c, 401, 401, "invalid login key")
+		}
+
 		go actionCopy(postData["src"], postData["dest"])
-		return nil
-	})
-	v1.Get("copy", func(c *fiber.Ctx) error {
-		src := c.Query("src")
-		dest := c.Query("dest")
-		go actionCopy(src, dest)
-		return c.SendString("Copying, please wait")
+		return sendSuccess(c, nil)
 	})
 	return app
+}
+
+func sendSuccess(c *fiber.Ctx, data interface{}) error {
+	return c.JSON(map[string]interface{}{"errcode": 0, "data": data})
+}
+
+func sendFailure(c *fiber.Ctx, statusCode, errcode int, errmsg string) error {
+	return c.Status(statusCode).JSON(map[string]interface{}{"errcode": errcode, "errmsg": errmsg})
 }
 
 func actionCopy(src, dest string) {
