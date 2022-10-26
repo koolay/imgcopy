@@ -32,6 +32,8 @@ func runCopy(ctx context.Context, src, dest string) error {
 		logEvent(fmt.Sprintf("%s %s", time.Now().Format("2006-01-02T15:04:05.000"), line))
 	})
 	args := []string{
+		"--debug",
+		"--insecure-policy",
 		"copy",
 		"--dest-authfile",
 		cfg.DockerConfigFile,
@@ -97,9 +99,11 @@ func main() {
 		},
 		Action: func(*cli.Context) error {
 			loadConfig()
-			if cfg.DockerAuthName != "" && cfg.DockerAuthToken != "" {
-				if err := initDockerToken(cfg.DockerConfigFile, cfg.DockerAuthName, cfg.DockerAuthToken); err != nil {
-					return err
+			if _, err := os.Stat(cfg.DockerConfigFile); os.IsNotExist(err) {
+				if cfg.DockerAuthName != "" && cfg.DockerAuthToken != "" {
+					if err := initDockerToken(cfg.DockerConfigFile, cfg.DockerAuthName, cfg.DockerAuthToken); err != nil {
+						return err
+					}
 				}
 			}
 
