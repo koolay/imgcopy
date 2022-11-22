@@ -65,6 +65,7 @@ func loadConfig() {
 }
 
 func initDockerToken(tokenFile, authName, token string) error {
+	log.Println("writie dockerconfig file:", tokenFile)
 	if err := os.WriteFile(tokenFile, []byte(`{
 	"auths": {
 		"`+authName+`": {
@@ -79,6 +80,7 @@ func initDockerToken(tokenFile, authName, token string) error {
 }
 
 func main() {
+	log.SetFlags(log.Lshortfile)
 	app := &cli.App{
 		Name:  "imgcopy",
 		Usage: "copy image to",
